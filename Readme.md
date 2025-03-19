@@ -2,6 +2,13 @@
 
 hey there! 👋 welcome to **Dizzy**, the tool that'll help you find security issues and performance insights in your Azure DevOps environment without making you tear your hair out. who needs hair anyway?
 
+
+![alt text](https://github.com/BekeAtGithub/Dizzy/blob/main/AppScreenShot1.jpg)
+
+
+![alt text]([https://github.com/BekeAtGithub/WinnyJenkins/blob/main/2%20Step%20Instructions.png](https://github.com/BekeAtGithub/Dizzy/blob/main/AppScreenShot2.jpg))
+
+
 ## What is this thing?
 
 Dizzy is a PowerShell-based tool that scans your Azure DevOps pipelines, repositories, builds, and releases to find:
