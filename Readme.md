@@ -15,7 +15,7 @@ Dizzy is a PowerShell-based tool that scans your Azure DevOps pipelines, reposit
 
 - Secrets and API keys accidentally committed to repos (we've all been there)
 - Security misconfigurations in your pipelines and builds
-- Performance insights to make your CI/CD run smoother than your coffee after forgetting to eat lunch
+- Performance insights to make your CI/CD run smoother than your coffee after forgetting to eat lunch... did you eat lunch yet?
 - Issues that would make your security team stay up at night (more than they already do)
 
 ## Getting Started
