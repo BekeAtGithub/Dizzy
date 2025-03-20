@@ -151,8 +151,8 @@ function New-DashboardSummaryHtml {
     # Get HTML header
     $htmlContent = Get-DashboardHtmlHeader
     
-    # Add Scan Summary Section
-    $htmlContent += @"
+        # Add Scan Summary Section
+        $htmlContent += @"
         <div class="summary-section">
             <h2>Scan Summary</h2>
             <div class="scan-info">
@@ -173,10 +173,10 @@ function New-DashboardSummaryHtml {
         
         <div id="filters">
             <button class="filter-button active" data-component="all" onclick="filterByComponent('all')">All Components</button>
-            $(if ($RepoResults) { '<button class="filter-button" data-component="repo" onclick="filterByComponent(\'repo\')">Repositories</button>' })
-            $(if ($PipelineResults) { '<button class="filter-button" data-component="pipeline" onclick="filterByComponent(\'pipeline\')">Pipelines</button>' })
-            $(if ($BuildResults) { '<button class="filter-button" data-component="build" onclick="filterByComponent(\'build\')">Builds</button>' })
-            $(if ($ReleaseResults) { '<button class="filter-button" data-component="release" onclick="filterByComponent(\'release\')">Releases</button>' })
+            $(if ($RepoResults) { "<button class=`"filter-button`" data-component=`"repo`" onclick=`"filterByComponent('repo')`">Repositories</button>" })
+            $(if ($PipelineResults) { "<button class=`"filter-button`" data-component=`"pipeline`" onclick=`"filterByComponent('pipeline')`">Pipelines</button>" })
+            $(if ($BuildResults) { "<button class=`"filter-button`" data-component=`"build`" onclick=`"filterByComponent('build')`">Builds</button>" })
+            $(if ($ReleaseResults) { "<button class=`"filter-button`" data-component=`"release`" onclick=`"filterByComponent('release')`">Releases</button>" })
         </div>
         
         <div class="dashboard-grid">
@@ -398,4 +398,4 @@ function New-DashboardSummaryHtml {
 }
 
 # Export the functions
-Export-ModuleMember -Function Initialize-HtmlOutput, New-DashboardSummaryHtml, Get-DashboardHtmlHeader
+#Export-ModuleMember -Function Initialize-HtmlOutput, New-DashboardSummaryHtml, Get-DashboardHtmlHeader
