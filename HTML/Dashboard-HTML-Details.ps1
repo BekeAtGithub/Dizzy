@@ -550,4 +550,4 @@ function New-DashboardHtml {
 }
 
 # Export functions
-Export-ModuleMember -Function New-DashboardHtml, New-CompleteDetailsHtml
+#Export-ModuleMember -Function New-DashboardHtml, New-CompleteDetailsHtml
