@@ -478,4 +478,4 @@ function Get-ReleaseAnalysisResults {
 }
 
 # Export functions
-Export-ModuleMember -Function Start-ReleaseAnalysis, Get-ReleaseAnalysisResults
+#Export-ModuleMember -Function Start-ReleaseAnalysis, Get-ReleaseAnalysisResults
