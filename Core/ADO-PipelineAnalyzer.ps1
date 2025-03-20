@@ -13,49 +13,68 @@ $script:pipelineAnalysisResults = @()
 $pipelinePatterns = @{
     # Security Issues
     "Hardcoded Password" = @{
-        Pattern = "(?i)password\s*[:=]\s*['\""][^'\"]+['\"]"
+        # Using here-strings for complex regex patterns
+        Pattern = @'
+(?i)password\s*[:=]\s*['""][^'"]+['""]
+'@
         Severity = "High"
         Description = "Hardcoded password detected. Use secure variables instead."
     }
     "Hardcoded Token" = @{
-        Pattern = "(?i)(token|api[._-]*key)\s*[:=]\s*['\""][^'\"]+['\"]"
+        Pattern = @'
+(?i)(token|api[._-]*key)\s*[:=]\s*['""][^'"]+['""]
+'@
         Severity = "High"
         Description = "Hardcoded token or API key detected. Use secure variables instead."
     }
     "Plain Text Secret Variable" = @{
-        Pattern = "(?i)variables:\s*\n\s*[^#\n]*?(password|secret|token|key).*?:\s*[^\n]+\n"
+        Pattern = @'
+(?i)variables:\s*\n\s*[^#\n]*?(password|secret|token|key).*?:\s*[^\n]+\n
+'@
         Severity = "High"
         Description = "Plain text secret variable found. Use secret variables with the 'secure: true' attribute."
     }
     "Insecure Command Execution" = @{
-        Pattern = "(?i)exec\s*:\s*.*?(sh|bash|cmd|powershell)\s.*?-.*?(c|command|e|expression)"
+        Pattern = @'
+(?i)exec\s*:\s*.*?(sh|bash|cmd|powershell)\s.*?-.*?(c|command|e|expression)
+'@
         Severity = "Medium"
         Description = "Potentially unsafe command execution with shell interpreters. Review for injection risks."
     }
     
     # Best Practices
     "Missing Timeout" = @{
-        Pattern = "(?i)jobs:\s*\n(?:.*?\n)*?(?!\s*timeoutInMinutes)"
+        Pattern = @'
+(?i)jobs:\s*\n(?:.*?\n)*?(?!\s*timeoutInMinutes)
+'@
         Severity = "Low"
         Description = "Pipeline or job is missing a timeout setting. Add 'timeoutInMinutes' to prevent runaway jobs."
     }
     "Outdated Agent Pool" = @{
-        Pattern = "(?i)pool:\s*\n\s*vmImage:\s*'?(vs2017-win2016|ubuntu-16\.04|macOS-10\.14)'?"
+        Pattern = @'
+(?i)pool:\s*\n\s*vmImage:\s*'?(vs2017-win2016|ubuntu-16\.04|macOS-10\.14)'?
+'@
         Severity = "Low"
         Description = "Using outdated agent pool. Consider upgrading to the latest version."
     }
     "Missing Pipeline Trigger" = @{
-        Pattern = "(?i)(?!trigger:)(?!pr:)(?!schedules:).*?steps:"
+        Pattern = @'
+(?i)(?!trigger:)(?!pr:)(?!schedules:).*?steps:
+'@
         Severity = "Low"
         Description = "Pipeline is missing explicit trigger configuration."
     }
     "Self Hosted Agent" = @{
-        Pattern = "(?i)pool:\s*\n\s*name:\s*'[^']+"
+        Pattern = @'
+(?i)pool:\s*\n\s*name:\s*'[^']+
+'@
         Severity = "Info"
         Description = "Using self-hosted agent pool. Ensure it's properly secured and patched."
     }
     "Using Scripts Task" = @{
-        Pattern = "(?i)task:\s*'?Scripts'?"
+        Pattern = @'
+(?i)task:\s*'?Scripts'?
+'@
         Severity = "Info"
         Description = "Using the Scripts task which executes scripts. Ensure input validation."
     }
@@ -186,7 +205,8 @@ function Find-PipelineIssues {
             
             # Mask secrets in the context for security
             if ($pattern.Value.Severity -eq "High") {
-                $context = $context -replace "['\""][^\s'\"]+['\""]", "'***'"
+                # Fixed replacement pattern using single quotes
+                $context = $context -replace '["''][^\s"'']+["'']', "'***'"
             }
             
             $lineNumber = ($Content.Substring(0, $match.Index).Split("`n")).Count
@@ -325,5 +345,5 @@ function Get-PipelineAnalysisResults {
     return $script:pipelineAnalysisResults
 }
 
-# Export functions
-Export-ModuleMember -Function Start-PipelineAnalysis, Get-PipelineAnalysisResults
+# Export functions - commented out to prevent error when not running as a module
+# Export-ModuleMember -Function Start-PipelineAnalysis, Get-PipelineAnalysisResults
