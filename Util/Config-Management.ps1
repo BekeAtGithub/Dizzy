@@ -324,6 +324,6 @@ function Test-DizzyPatPermissions {
 }
 
 # Export functions
-Export-ModuleMember -Function Initialize-DizzyConfig, Get-DizzyConfig, Set-DizzyConfig, 
-                              Set-DizzyPAT, Get-DizzyPAT, Test-DizzyConnection,
-                              New-DizzyOutputFolder, Test-DizzyPatPermissions
+#Export-ModuleMember -Function Initialize-DizzyConfig, Get-DizzyConfig, Set-DizzyConfig, 
+#                              Set-DizzyPAT, Get-DizzyPAT, Test-DizzyConnection,
+#                              New-DizzyOutputFolder, Test-DizzyPatPermissions
