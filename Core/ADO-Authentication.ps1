@@ -2,6 +2,28 @@
 # Core authentication module for Azure DevOps API access
 
 # Function to load the saved configuration
+
+# Near the beginning of ADO-Authentication.ps1, modify the path resolution:
+
+# Get the script's directory
+$scriptPath = $PSScriptRoot
+if ([string]::IsNullOrEmpty($scriptPath)) {
+    $scriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
+}
+
+# Define paths to utility scripts
+$utilPath = Join-Path -Path (Split-Path -Parent $scriptPath) -ChildPath "Util"
+$configModulePath = Join-Path -Path $utilPath -ChildPath "Config-Management.ps1"
+
+# Source the Config-Management script
+if (Test-Path $configModulePath) {
+    . $configModulePath
+    Write-Host "Successfully loaded Config-Management.ps1" -ForegroundColor Green
+}
+else {
+    Write-Error "Critical module not found: Config-Management.ps1 at $configModulePath"
+    exit
+}
 function Get-DizzyConfig {
     [CmdletBinding()]
     param()
@@ -60,6 +82,8 @@ function Get-AzureDevOpsAuthHeader {
 }
 
 # Function to test connection to Azure DevOps
+# In ADO-Authentication.ps1, modify the Test-AzureDevOpsConnection function:
+
 function Test-AzureDevOpsConnection {
     [CmdletBinding()]
     param()
@@ -73,7 +97,10 @@ function Test-AzureDevOpsConnection {
     
     try {
         # Test connection by getting project info
-        $projectApiUrl = "$($config.OrganizationUrl)/$($config.Project)/_apis/projects?api-version=6.0"
+        $endpoints = Get-AzureDevOpsApiEndpoints
+        $projectApiUrl = $endpoints.ProjectApi.Info
+        
+        Write-Host "Testing connection to: $projectApiUrl" -ForegroundColor Cyan
         
         $response = Invoke-RestMethod -Uri $projectApiUrl -Headers $headers -Method Get -ErrorAction Stop
         
@@ -87,6 +114,9 @@ function Test-AzureDevOpsConnection {
 }
 
 # Function to get Azure DevOps API endpoints
+# File: ADO-Authentication.ps1
+# Around line 120-170, modify this section:
+
 function Get-AzureDevOpsApiEndpoints {
     [CmdletBinding()]
     param()
@@ -94,58 +124,68 @@ function Get-AzureDevOpsApiEndpoints {
     $config = Get-DizzyConfig
     
     if ($null -eq $config) {
+        Write-Error "Failed to get configuration."
         return $null
     }
     
     $organization = $config.OrganizationUrl
     $project = $config.Project
     
+    # Check organization URL format
+    if ($organization -match "dev\.azure\.com") {
+        # New format: https://dev.azure.com/orgname
+        $baseUrl = "$organization/$project"
+    } else {
+        # Old format: https://orgname.visualstudio.com
+        $baseUrl = "$organization/$project"
+    }
+    
     return @{
         Organization = $organization
         Project = $project
         # Git repositories endpoints
         Git = @{
-            Repositories = "$organization/$project/_apis/git/repositories?api-version=6.0"
-            Repository = "$organization/$project/_apis/git/repositories/{repositoryId}?api-version=6.0"
-            Items = "$organization/$project/_apis/git/repositories/{repositoryId}/items?recursionLevel=Full&api-version=6.0"
-            Commits = "$organization/$project/_apis/git/repositories/{repositoryId}/commits?api-version=6.0"
-            PullRequests = "$organization/$project/_apis/git/repositories/{repositoryId}/pullrequests?api-version=6.0"
+            Repositories = "$baseUrl/_apis/git/repositories?api-version=6.0"
+            Repository = "$baseUrl/_apis/git/repositories/{repositoryId}?api-version=6.0"
+            Items = "$baseUrl/_apis/git/repositories/{repositoryId}/items?recursionLevel=Full&api-version=6.0"
+            Commits = "$baseUrl/_apis/git/repositories/{repositoryId}/commits?api-version=6.0"
+            PullRequests = "$baseUrl/_apis/git/repositories/{repositoryId}/pullrequests?api-version=6.0"
         }
         # Build endpoints
         Build = @{
-            Definitions = "$organization/$project/_apis/build/definitions?api-version=6.0"
-            Definition = "$organization/$project/_apis/build/definitions/{definitionId}?api-version=6.0"
-            Builds = "$organization/$project/_apis/build/builds?api-version=6.0"
-            Build = "$organization/$project/_apis/build/builds/{buildId}?api-version=6.0"
-            Artifacts = "$organization/$project/_apis/build/builds/{buildId}/artifacts?api-version=6.0"
-            Timeline = "$organization/$project/_apis/build/builds/{buildId}/timeline?api-version=6.0"
-            Logs = "$organization/$project/_apis/build/builds/{buildId}/logs?api-version=6.0"
+            Definitions = "$baseUrl/_apis/build/definitions?api-version=6.0"
+            Definition = "$baseUrl/_apis/build/definitions/{definitionId}?api-version=6.0"
+            Builds = "$baseUrl/_apis/build/builds?api-version=6.0"
+            Build = "$baseUrl/_apis/build/builds/{buildId}?api-version=6.0"
+            Artifacts = "$baseUrl/_apis/build/builds/{buildId}/artifacts?api-version=6.0"
+            Timeline = "$baseUrl/_apis/build/builds/{buildId}/timeline?api-version=6.0"
+            Logs = "$baseUrl/_apis/build/builds/{buildId}/logs?api-version=6.0"
         }
         # Release endpoints
         Release = @{
-            Definitions = "$organization/$project/_apis/release/definitions?api-version=6.0"
-            Definition = "$organization/$project/_apis/release/definitions/{definitionId}?api-version=6.0"
-            Releases = "$organization/$project/_apis/release/releases?api-version=6.0"
-            Release = "$organization/$project/_apis/release/releases/{releaseId}?api-version=6.0"
+            Definitions = "$baseUrl/_apis/release/definitions?api-version=6.0"
+            Definition = "$baseUrl/_apis/release/definitions/{definitionId}?api-version=6.0"
+            Releases = "$baseUrl/_apis/release/releases?api-version=6.0"
+            Release = "$baseUrl/_apis/release/releases/{releaseId}?api-version=6.0"
         }
         # Pipeline endpoints
         Pipeline = @{
-            Pipelines = "$organization/$project/_apis/pipelines?api-version=6.0"
-            Pipeline = "$organization/$project/_apis/pipelines/{pipelineId}?api-version=6.0"
-            Runs = "$organization/$project/_apis/pipelines/{pipelineId}/runs?api-version=6.0"
-            Run = "$organization/$project/_apis/pipelines/{pipelineId}/runs/{runId}?api-version=6.0"
+            Pipelines = "$baseUrl/_apis/pipelines?api-version=6.0"
+            Pipeline = "$baseUrl/_apis/pipelines/{pipelineId}?api-version=6.0"
+            Runs = "$baseUrl/_apis/pipelines/{pipelineId}/runs?api-version=6.0"
+            Run = "$baseUrl/_apis/pipelines/{pipelineId}/runs/{runId}?api-version=6.0"
         }
         # Security
         Security = @{
             Permissions = "$organization/_apis/security/permissions?api-version=6.0"
             AccessControlLists = "$organization/_apis/accesscontrollists?api-version=6.0"
         }
-        # Project
-        Project = @{
-            Info = "$organization/$project/_apis/projects?api-version=6.0"
-            Teams = "$organization/$project/_apis/teams?api-version=6.0"
-            Properties = "$organization/$project/_apis/projects/{projectId}/properties?api-version=6.0"
-            Services = "$organization/$project/_apis/servicehooks/services?api-version=6.0"
+        # Project - Renamed to avoid conflict with the variable
+        ProjectApi = @{
+            Info = "$baseUrl/_apis/projects?api-version=6.0"
+            Teams = "$baseUrl/_apis/teams?api-version=6.0"
+            Properties = "$baseUrl/_apis/projects/{projectId}/properties?api-version=6.0"
+            Services = "$baseUrl/_apis/servicehooks/services?api-version=6.0"
         }
     }
 }
@@ -271,6 +311,6 @@ function Get-AzureDevOpsApiPaginated {
 }
 
 # Export functions
-Export-ModuleMember -Function Get-DizzyConfig, Get-DizzyPAT, Get-AzureDevOpsAuthHeader, 
-                             Test-AzureDevOpsConnection, Get-AzureDevOpsApiEndpoints,
-                             Invoke-AzureDevOpsApi, Get-AzureDevOpsApiPaginated
+#Export-ModuleMember -Function Get-DizzyConfig, Get-DizzyPAT, Get-AzureDevOpsAuthHeader, 
+#                             Test-AzureDevOpsConnection, Get-AzureDevOpsApiEndpoints,
+#                             Invoke-AzureDevOpsApi, Get-AzureDevOpsApiPaginated
