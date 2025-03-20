@@ -225,4 +225,4 @@ function New-ReleaseFindingsSection {
 }
 
 # Export functions
-Export-ModuleMember -Function New-RepositoryFindingsSection, New-PipelineFindingsSection, New-BuildFindingsSection, New-ReleaseFindingsSection
+#Export-ModuleMember -Function New-RepositoryFindingsSection, New-PipelineFindingsSection, New-BuildFindingsSection, New-ReleaseFindingsSection
