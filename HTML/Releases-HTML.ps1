@@ -280,7 +280,7 @@ function New-ReleaseAnalysisHtml {
         }
     }
     
-    if ($avgSuccessRate < 80) {
+    if ($avgSuccessRate -lt 80) {
         $htmlContent += @"
             <div class="warning">
                 <strong>Performance Concern:</strong> The average release success rate is only $avgSuccessRate%, which is below the recommended 80% threshold.
@@ -363,10 +363,10 @@ function New-ReleaseAnalysisHtml {
             $successRateValue = $release.PerformanceAnalysis.RecentSuccessRate
             $barColor = "progress-bar-success"
             
-            if ($successRateValue < 60) {
+            if ($successRateValue -lt 60) {
                 $barColor = "progress-bar-danger"
             }
-            elseif ($successRateValue < 80) {
+            elseif ($successRateValue -lt 80) {
                 $barColor = "progress-bar-warning"
             }
             
@@ -489,4 +489,4 @@ function New-ReleaseAnalysisHtml {
 }
 
 # Export function
-Export-ModuleMember -Function New-ReleaseAnalysisHtml
+#Export-ModuleMember -Function New-ReleaseAnalysisHtml
