@@ -447,4 +447,4 @@ function New-BuildAnalysisHtml {
 }
 
 # Export function
-Export-ModuleMember -Function New-BuildAnalysisHtml
+#Export-ModuleMember -Function New-BuildAnalysisHtml
