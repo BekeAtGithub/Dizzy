@@ -211,7 +211,7 @@ function New-RepositoryScanHtml {
         <div class="repo-section">
             <div class="repo-header">
                 <h3>$($repo.RepositoryName)</h3>
-                <span class="badge badge-count">$($repo.Findings ? $repo.Findings.Count : 0) findings</span>
+                <span class="badge badge-count">$(if ($repo.Findings) { $repo.Findings.Count } else { 0 }) findings</span>
             </div>
             <p>
                 <strong>Default Branch:</strong> $($repo.DefaultBranch)<br>
@@ -305,4 +305,4 @@ function New-RepositoryScanHtml {
 }
 
 # Export function
-Export-ModuleMember -Function New-RepositoryScanHtml
+#Export-ModuleMember -Function New-RepositoryScanHtml
