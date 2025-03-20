@@ -6,7 +6,7 @@ hey there! 👋 welcome to **Dizzy**, the tool that'll help you find security is
 ![alt text](https://github.com/BekeAtGithub/Dizzy/blob/main/AppScreenShot1.jpg)
 
 
-![alt text]([https://github.com/BekeAtGithub/WinnyJenkins/blob/main/2%20Step%20Instructions.png](https://github.com/BekeAtGithub/Dizzy/blob/main/AppScreenShot2.jpg))
+![alt text](https://github.com/BekeAtGithub/Dizzy/blob/main/AppScreenShot2.jpg)
 
 
 ## What is this thing?
