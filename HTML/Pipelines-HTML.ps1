@@ -378,4 +378,4 @@ function New-PipelineAnalysisHtml {
 }
 
 # Export function
-Export-ModuleMember -Function New-PipelineAnalysisHtml
+#Export-ModuleMember -Function New-PipelineAnalysisHtml
