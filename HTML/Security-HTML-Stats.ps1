@@ -253,4 +253,4 @@ function New-SecuritySummarySection {
 }
 
 # Export functions
-Export-ModuleMember -Function Get-SecurityStatistics, New-SecuritySummarySection
+#Export-ModuleMember -Function Get-SecurityStatistics, New-SecuritySummarySection
