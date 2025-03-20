@@ -312,4 +312,4 @@ else {
 }
 
 # Export function
-Export-ModuleMember -Function New-SecurityOverviewHtml, Get-SecurityReportHeader
+#Export-ModuleMember -Function New-SecurityOverviewHtml, Get-SecurityReportHeader
