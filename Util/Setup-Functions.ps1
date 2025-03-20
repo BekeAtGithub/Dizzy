@@ -562,9 +562,9 @@ function Update-DizzyComponents {
 }
 
 # Export functions
-Export-ModuleMember -Function Test-RequiredModules, Test-PowerShellVersion, 
-                              Test-PatFormat, Test-AzureDevOpsUrlFormat, 
-                              Get-ValidAzureDevOpsUrl, Get-ValidPAT, 
-                              Get-PatPermissionsInfo, Initialize-DizzySetup,
-                              Test-OutputFolder, New-DizzyShortcut, 
-                              Show-PatHelp, Update-DizzyComponents
+#Export-ModuleMember -Function Test-RequiredModules, Test-PowerShellVersion, 
+#                              Test-PatFormat, Test-AzureDevOpsUrlFormat, 
+#                              Get-ValidAzureDevOpsUrl, Get-ValidPAT, 
+#                              Get-PatPermissionsInfo, Initialize-DizzySetup,
+#                              Test-OutputFolder, New-DizzyShortcut, 
+#                              Show-PatHelp, Update-DizzyComponents
