@@ -420,4 +420,4 @@ function Start-DizzyAnalysis {
 }
 
 # Export functions
-Export-ModuleMember -Function Start-DizzyAnalysis, Start-AllAnalysis, New-AnalysisDashboard
+#Export-ModuleMember -Function Start-DizzyAnalysis, Start-AllAnalysis, New-AnalysisDashboard
