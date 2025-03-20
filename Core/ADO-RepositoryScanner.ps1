@@ -16,17 +16,17 @@ $secretPatterns = @{
     "AWS Secret Key" = "(?<![A-Za-z0-9])[0-9a-zA-Z/+]{40}(?![A-Za-z0-9])"
     "Azure Storage Account Key" = "(?<![A-Za-z0-9])[A-Za-z0-9+/=]{88}(?![A-Za-z0-9])"
     "Azure Connection String" = "DefaultEndpointsProtocol=https?;AccountName=[^;]+;AccountKey=[^;]+"
-    "GitHub Token" = "(?i)(?<![A-Za-z0-9])github[_\-\s]*(pat|token|key)[_\-\s]*['\"]?[0-9a-zA-Z]{35,40}['\"]?"
-    "Generic API Key" = "(?i)(api[_\-\s]*(key|token)|access[_\-\s]*(key|token))[_\-\s]*['\"]?[0-9a-zA-Z]{16,64}['\"]?"
+    "GitHub Token" = "(?i)(?<![A-Za-z0-9])github[_\-\s]*(pat|token|key)[_\-\s]*[`'`"]?[0-9a-zA-Z]{35,40}[`'`"]?"
+    "Generic API Key" = "(?i)(api[_\-\s]*(key|token)|access[_\-\s]*(key|token))[_\-\s]*[`'`"]?[0-9a-zA-Z]{16,64}[`'`"]?"
     
     # Credentials
-    "Password in Assignment" = "(?i)(password|passwd|pwd)\s*=\s*['\""][^'\"]{4,}['\"]"
-    "Connection String with Password" = "(?i)(?:connection[_\-\s]*string|conn[_\-\s]*str)[_\-\s]*['\"]?.*password=[^;']+"
-    "Connection String with User ID" = "(?i)(?:connection[_\-\s]*string|conn[_\-\s]*str)[_\-\s]*['\"]?.*user id=[^;']+"
+    "Password in Assignment" = "(?i)(password|passwd|pwd)\s*=\s*[`'`"][^`'`"]{4,}[`'`"]"
+    "Connection String with Password" = "(?i)(?:connection[_\-\s]*string|conn[_\-\s]*str)[_\-\s]*[`'`"]?.*password=[^;`']+"
+    "Connection String with User ID" = "(?i)(?:connection[_\-\s]*string|conn[_\-\s]*str)[_\-\s]*[`'`"]?.*user id=[^;`']+"
     
     # Private Keys
     "RSA Private Key" = "-----BEGIN RSA PRIVATE KEY-----"
-    "SSH Private Key" = "-----BEGIN (OPENSSH|SSH2) PRIVATE KEY-----"
+    "SSH Private Key" = "-----BEGIN (OPENSSH|SSH2) PRIVATE KEY-----" 
     "PGP Private Key" = "-----BEGIN PGP PRIVATE KEY BLOCK-----"
     
     # Other Sensitive Data
@@ -364,4 +364,4 @@ function Get-RepositoryScanResults {
 }
 
 # Export functions
-Export-ModuleMember -Function Start-RepositoryScan, Get-RepositoryScanResults
+#Export-ModuleMember -Function Start-RepositoryScan, Get-RepositoryScanResults
