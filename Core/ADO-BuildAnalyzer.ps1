@@ -518,4 +518,4 @@ function Get-BuildAnalysisResults {
 }
 
 # Export functions
-Export-ModuleMember -Function Start-BuildAnalysis, Get-BuildAnalysisResults
+#Export-ModuleMember -Function Start-BuildAnalysis, Get-BuildAnalysisResults
