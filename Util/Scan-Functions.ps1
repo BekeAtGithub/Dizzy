@@ -550,4 +550,4 @@ function Export-DizzyScanResults {
 }
 
 # Export functions
-Export-ModuleMember -Function Start-DizzyScan, New-DizzySecurityReport, Export-DizzyScanResults
+#Export-ModuleMember -Function Start-DizzyScan, New-DizzySecurityReport, Export-DizzyScanResults
