@@ -1,6 +1,6 @@
 # Dizzy - Azure DevOps Analyzer
 
-hey there! 👋 welcome to **Dizzy**, the tool that'l help yall find security issues and performance insights in your Azure DevOps environment without making you tear your hair out. who needs hair anyway?
+hey there! 👋 welcome to **Dizzy**, the tool that'l help yall find security issues and performance insights in your Azure DevOps environment
 
 
 ![alt text](https://github.com/BekeAtGithub/Dizzy/blob/main/AppScreenShot1.jpg)
