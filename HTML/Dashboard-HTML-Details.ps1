@@ -7,6 +7,7 @@ $dashboardPart1Path = Join-Path -Path $scriptPath -ChildPath "Dashboard-HTML.ps1
 . $dashboardPart1Path
 
 # Function to generate repository details HTML
+# Modified New-RepositoryDetailsHtml function for Dashboard-HTML-Details.ps1
 function New-RepositoryDetailsHtml {
     [CmdletBinding()]
     param(
@@ -14,53 +15,105 @@ function New-RepositoryDetailsHtml {
         [object]$RepoResults
     )
     
+    # Debug repository data
+    if ($null -eq $RepoResults) {
+        Write-Host "Repository data is NULL in details HTML" -ForegroundColor Red
+        $RepoResults = @()
+    }
+    
+    Write-Host "Processing $(@($RepoResults).Count) repositories for HTML details" -ForegroundColor Cyan
+    
     $htmlContent = @"
-    <h2 id="repositories">Repository Findings</h2>
+    <h2 id="repositories">Repository Information</h2>
     <div class="panel panel-full component-panel" data-component="repo">
 "@
     
-    $reposWithFindings = $RepoResults | Where-Object { $_.Findings -and $_.Findings.Count -gt 0 }
-    
-    if ($reposWithFindings.Count -gt 0) {
-        foreach ($repo in $reposWithFindings) {
-            $htmlContent += @"
-        <h3>$($repo.RepositoryName)</h3>
-        <p>
-            <strong>Branch:</strong> $($repo.DefaultBranch)<br/>
-            <strong>Scanned Files:</strong> $($repo.ScannedFilesCount) of $($repo.TotalFilesCount)<br/>
-            <strong>Findings:</strong> $($repo.Findings.Count)
-        </p>
-        
+    # Check if we have any repository data
+    if (@($RepoResults).Count -eq 0) {
+        $htmlContent += @"
+        <div class="info">
+            <strong>No repositories found:</strong> No repository information is available.
+            <p>This could be due to API access issues or because there are no repositories in this project.</p>
+        </div>
+"@
+    } else {
+        # First, let's add a summary table of all repositories
+        $htmlContent += @"
+        <h3>All Repositories</h3>
         <table>
             <tr>
-                <th>File Path</th>
-                <th>Line</th>
-                <th>Type</th>
-                <th>Context</th>
+                <th>Repository Name</th>
+                <th>Default Branch</th>
+                <th>Total Files</th>
+                <th>Scanned Files</th>
+                <th>Findings</th>
+                <th>Details</th>
             </tr>
 "@
+        
+        foreach ($repo in $RepoResults) {
+            $findingsCount = if ($repo.Findings) { @($repo.Findings).Count } else { 0 }
+            $detailsId = "repo-details-$($repo.RepositoryId)".Replace('-','')
             
-            foreach ($finding in $repo.Findings) {
-                $htmlContent += @"
+            $htmlContent += @"
             <tr>
-                <td>$($finding.FilePath)</td>
-                <td>$($finding.LineNumber)</td>
-                <td><span class="status-badge status-high">$($finding.PatternName)</span></td>
-                <td><code>$($finding.Context)</code></td>
+                <td>$($repo.RepositoryName)</td>
+                <td>$($repo.DefaultBranch)</td>
+                <td>$($repo.TotalFilesCount)</td>
+                <td>$($repo.ScannedFilesCount)</td>
+                <td>$findingsCount</td>
+                <td><button onclick="toggleDetails('$detailsId')">Show/Hide</button></td>
             </tr>
+            <tr>
+                <td colspan="6">
+                    <div id="$detailsId" style="display: none;">
+                        <p><strong>Repository URL:</strong> <a href="$($repo.Url)" target="_blank">$($repo.Url)</a></p>
+                        <p><strong>Scan Date:</strong> $($repo.ScanDate)</p>
+"@
+            
+            if ($findingsCount -gt 0) {
+                $htmlContent += @"
+                        <h4>Security Findings</h4>
+                        <table>
+                            <tr>
+                                <th>File Path</th>
+                                <th>Line</th>
+                                <th>Type</th>
+                                <th>Context</th>
+                            </tr>
+"@
+                
+                foreach ($finding in $repo.Findings) {
+                    $htmlContent += @"
+                            <tr>
+                                <td>$($finding.FilePath)</td>
+                                <td>$($finding.LineNumber)</td>
+                                <td><span class="status-badge status-high">$($finding.PatternName)</span></td>
+                                <td><code>$($finding.Context)</code></td>
+                            </tr>
+"@
+                }
+                
+                $htmlContent += @"
+                        </table>
+"@
+            } else {
+                $htmlContent += @"
+                        <div class="success">
+                            <strong>No findings:</strong> No secrets or sensitive data were found in this repository.
+                        </div>
 "@
             }
             
             $htmlContent += @"
-        </table>
+                    </div>
+                </td>
+            </tr>
 "@
         }
-    }
-    else {
+        
         $htmlContent += @"
-        <div class="success">
-            <strong>No findings:</strong> No secrets or sensitive data were found in any repository.
-        </div>
+        </table>
 "@
     }
     
@@ -72,6 +125,7 @@ function New-RepositoryDetailsHtml {
 }
 
 # Function to generate pipeline details HTML
+# Modified New-PipelineDetailsHtml function for Dashboard-HTML-Details.ps1
 function New-PipelineDetailsHtml {
     [CmdletBinding()]
     param(
@@ -84,25 +138,80 @@ function New-PipelineDetailsHtml {
     <div class="panel panel-full component-panel" data-component="pipeline">
 "@
     
-    $pipelinesWithIssues = $PipelineResults | Where-Object { $_.Findings -and $_.Findings.Count -gt 0 }
-    
-    if ($pipelinesWithIssues.Count -gt 0) {
-        foreach ($pipeline in $pipelinesWithIssues) {
-            $htmlContent += @"
-        <h3>$($pipeline.PipelineName)</h3>
-        <p>
-            <strong>Type:</strong> $($pipeline.PipelineType)<br/>
-            <strong>Created:</strong> $($pipeline.CreatedDate)<br/>
-            <strong>Issues:</strong> $($pipeline.Findings.Count)
-        </p>
-        
+    # Add summary table for all pipelines
+    $htmlContent += @"
+        <h3>All Pipelines</h3>
         <table>
             <tr>
-                <th>Line</th>
-                <th>Issue Type</th>
-                <th>Severity</th>
-                <th>Description</th>
+                <th>Pipeline Name</th>
+                <th>Type</th>
+                <th>Created Date</th>
+                <th>Issues</th>
+                <th>Details</th>
             </tr>
+"@
+    
+    foreach ($pipeline in $PipelineResults) {
+        $issuesCount = if ($pipeline.Findings) { $pipeline.Findings.Count } else { 0 }
+        $detailsId = "pipeline-details-$($pipeline.PipelineId.Replace('-',''))"
+        
+        $htmlContent += @"
+            <tr>
+                <td>$($pipeline.PipelineName)</td>
+                <td>$($pipeline.PipelineType)</td>
+                <td>$($pipeline.CreatedDate)</td>
+                <td>$issuesCount</td>
+                <td><button onclick="toggleDetails('$detailsId')">Show/Hide</button></td>
+            </tr>
+            <tr>
+                <td colspan="5">
+                    <div id="$detailsId" style="display: none;">
+                        <p><strong>Pipeline URL:</strong> <a href="$($pipeline.Url)" target="_blank">View in Azure DevOps</a></p>
+                        <p><strong>Scan Date:</strong> $($pipeline.ScanDate)</p>
+"@
+        
+        # Add recent runs if available
+        if ($pipeline.Runs -and $pipeline.Runs.Count -gt 0) {
+            $htmlContent += @"
+                        <h4>Recent Runs</h4>
+                        <table>
+                            <tr>
+                                <th>Run ID</th>
+                                <th>Name</th>
+                                <th>State</th>
+                                <th>Result</th>
+                                <th>Created Date</th>
+                            </tr>
+"@
+            
+            foreach ($run in $pipeline.Runs) {
+                $htmlContent += @"
+                            <tr>
+                                <td>$($run.id)</td>
+                                <td>$($run.name)</td>
+                                <td>$($run.state)</td>
+                                <td>$($run.result)</td>
+                                <td>$($run.createdDate)</td>
+                            </tr>
+"@
+            }
+            
+            $htmlContent += @"
+                        </table>
+"@
+        }
+        
+        # Show findings if any
+        if ($issuesCount -gt 0) {
+            $htmlContent += @"
+                        <h4>Security Issues</h4>
+                        <table>
+                            <tr>
+                                <th>Line</th>
+                                <th>Issue Type</th>
+                                <th>Severity</th>
+                                <th>Description</th>
+                            </tr>
 "@
             
             foreach ($finding in $pipeline.Findings) {
@@ -114,29 +223,35 @@ function New-PipelineDetailsHtml {
                 }
                 
                 $htmlContent += @"
-            <tr>
-                <td>$($finding.LineNumber)</td>
-                <td>$($finding.IssueType)</td>
-                <td><span class="status-badge $severityClass">$($finding.Severity)</span></td>
-                <td>$($finding.Description)<br/><code>$($finding.Context)</code></td>
-            </tr>
+                            <tr>
+                                <td>$($finding.LineNumber)</td>
+                                <td>$($finding.IssueType)</td>
+                                <td><span class="status-badge $severityClass">$($finding.Severity)</span></td>
+                                <td>$($finding.Description)<br/><code>$($finding.Context)</code></td>
+                            </tr>
 "@
             }
             
             $htmlContent += @"
-        </table>
+                        </table>
+"@
+        } else {
+            $htmlContent += @"
+                        <div class="success">
+                            <strong>No issues:</strong> No issues were found in this pipeline.
+                        </div>
 "@
         }
-    }
-    else {
+        
         $htmlContent += @"
-        <div class="success">
-            <strong>No issues:</strong> No issues were found in any pipeline.
-        </div>
+                    </div>
+                </td>
+            </tr>
 "@
     }
     
     $htmlContent += @"
+        </table>
     </div>
 "@
 
@@ -453,6 +568,10 @@ function New-ReleaseDetailsHtml {
 }
 
 # Function to combine all the detailed HTML sections and add footer
+# Modify the New-CompleteDetailsHtml function in Dashboard-HTML-Details.ps1 to ensure
+# repo and pipeline sections are always included, even when no results are available.
+# Here's the section to modify:
+
 function New-CompleteDetailsHtml {
     [CmdletBinding()]
     param(
@@ -476,15 +595,12 @@ function New-CompleteDetailsHtml {
         </div>
 "@
     
-    # Add repository details if available
-    if ($RepoResults) {
-        $htmlContent += New-RepositoryDetailsHtml -RepoResults $RepoResults
-    }
+    # Always include repository section, even if no results available
+    # This ensures the section is always displayed
+    $htmlContent += New-RepositoryDetailsHtml -RepoResults $(if ($RepoResults) { $RepoResults } else { @() })
     
-    # Add pipeline details if available
-    if ($PipelineResults) {
-        $htmlContent += New-PipelineDetailsHtml -PipelineResults $PipelineResults
-    }
+    # Always include pipeline section, even if no results available
+    $htmlContent += New-PipelineDetailsHtml -PipelineResults $(if ($PipelineResults) { $PipelineResults } else { @() })
     
     # Add build details if available
     if ($BuildResults) {
@@ -495,6 +611,7 @@ function New-CompleteDetailsHtml {
     if ($ReleaseResults) {
         $htmlContent += New-ReleaseDetailsHtml -ReleaseResults $ReleaseResults
     }
+    
     
     # Add footer and close HTML tags
     $htmlContent += @"
