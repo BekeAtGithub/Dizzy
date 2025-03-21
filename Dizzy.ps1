@@ -179,23 +179,24 @@ function Start-InteractiveMode {
     $askRelease = Read-Host "Analyze release definitions and history? (Y/N, default: Y)"
     if ($askRelease.ToUpper() -eq "N") { $scanRelease = $false }
     
-    # Scan depth
-    $scanDepthOptions = @("Light", "Medium", "Deep")
-    $scanDepthPrompt = @"
+# Scan depth
+$scanDepthOptions = @("Light", "Medium", "Deep")
+$scanDepthPrompt = @"
 Select scan depth:
   1: Light (Faster)
-  2: Medium (Default)
-  3: Deep (Slower)
+  2: Medium 
+  3: Deep (Default - In Depth)
 Enter choice (1-3):
 "@
-    $scanDepthChoice = Read-Host $scanDepthPrompt
-    
-    $scanDepth = "Medium" # Default
-    switch ($scanDepthChoice) {
-        "1" { $scanDepth = "Light" }
-        "2" { $scanDepth = "Medium" }
-        "3" { $scanDepth = "Deep" }
-    }
+$scanDepthChoice = Read-Host $scanDepthPrompt
+
+$scanDepth = "Deep" # Default
+switch ($scanDepthChoice) {
+    "1" { $scanDepth = "Light" }
+    "2" { $scanDepth = "Medium" }
+    "3" { $scanDepth = "Deep" }
+    "" { $scanDepth = "Deep" }  # Empty input also selects the default
+}
     
     # Days to look back
     $daysInput = Read-Host "Enter history period in days (default: 30)"
