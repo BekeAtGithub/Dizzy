@@ -31,7 +31,7 @@ function Initialize-HtmlOutput {
     return $script:dashboardHtmlPath
 }
 
-# Helper function to create HTML header and CSS styles
+# Add this to Dashboard-HTML.ps1 to replace the existing Get-DashboardHtmlHeader function
 function Get-DashboardHtmlHeader {
     # Create HTML header
     $htmlHeader = @"
@@ -64,6 +64,7 @@ function Get-DashboardHtmlHeader {
         .warning { background-color: #fff4e5; border-left: 4px solid #ff8c00; padding: 10px 15px; margin: 10px 0; }
         .error { background-color: #fde7e9; border-left: 4px solid #d13438; padding: 10px 15px; margin: 10px 0; }
         .success { background-color: #dff6dd; border-left: 4px solid #107c10; padding: 10px 15px; margin: 10px 0; }
+        .info { background-color: #f0f8ff; border-left: 4px solid #0078d4; padding: 10px 15px; margin: 10px 0; }
         .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; }
         .status-high { background-color: #fde7e9; color: #d13438; }
         .status-medium { background-color: #fff4e5; color: #ff8c00; }
@@ -106,7 +107,7 @@ function Get-DashboardHtmlHeader {
         
         function toggleDetails(id) {
             var element = document.getElementById(id);
-            if (element.style.display === 'none') {
+            if (element.style.display === 'none' || element.style.display === '') {
                 element.style.display = 'block';
             } else {
                 element.style.display = 'none';
@@ -127,8 +128,8 @@ function Get-DashboardHtmlHeader {
 
     return $htmlHeader
 }
-
-# Function to create the beginning of the dashboard HTML with summary sections
+# Helper function to create HTML header and CSS styles
+# Helper function to create HTML header and CSS styles
 function New-DashboardSummaryHtml {
     [CmdletBinding()]
     param(
@@ -151,8 +152,8 @@ function New-DashboardSummaryHtml {
     # Get HTML header
     $htmlContent = Get-DashboardHtmlHeader
     
-        # Add Scan Summary Section
-        $htmlContent += @"
+    # Add Scan Summary Section
+    $htmlContent += @"
         <div class="summary-section">
             <h2>Scan Summary</h2>
             <div class="scan-info">
@@ -173,8 +174,8 @@ function New-DashboardSummaryHtml {
         
         <div id="filters">
             <button class="filter-button active" data-component="all" onclick="filterByComponent('all')">All Components</button>
-            $(if ($RepoResults) { "<button class=`"filter-button`" data-component=`"repo`" onclick=`"filterByComponent('repo')`">Repositories</button>" })
-            $(if ($PipelineResults) { "<button class=`"filter-button`" data-component=`"pipeline`" onclick=`"filterByComponent('pipeline')`">Pipelines</button>" })
+            <button class="filter-button" data-component="repo" onclick="filterByComponent('repo')">Repositories</button>
+            <button class="filter-button" data-component="pipeline" onclick="filterByComponent('pipeline')">Pipelines</button>
             $(if ($BuildResults) { "<button class=`"filter-button`" data-component=`"build`" onclick=`"filterByComponent('build')`">Builds</button>" })
             $(if ($ReleaseResults) { "<button class=`"filter-button`" data-component=`"release`" onclick=`"filterByComponent('release')`">Releases</button>" })
         </div>
@@ -267,37 +268,46 @@ function New-DashboardSummaryHtml {
             </div>
 "@
 
-    # Add Components Stats Panel
+    # Add debugging for repository count
+    $repoCount = 0
+    if ($null -ne $RepoResults) {
+        $repoCount = @($RepoResults).Count
+        Write-Host "DEBUG: Repository data received in dashboard HTML: $repoCount items" -ForegroundColor Magenta
+        if ($repoCount -gt 0) {
+            Write-Host "DEBUG: First repository: $($RepoResults[0].RepositoryName)" -ForegroundColor Magenta
+        }
+    }
+    else {
+        Write-Host "DEBUG: Repository data is NULL in dashboard HTML" -ForegroundColor Red
+    }
+
+    # Add Components Stats Panel with explicit conversion to ensure counts
     $htmlContent += @"
             <div class="panel component-panel" data-component="all">
                 <h3>Components Overview</h3>
                 <div class="stat-container">
-                    $(if ($RepoResults) { "
                     <div class='stat-item'>
-                        <div class='stat-value'>$($RepoResults.Count)</div>
+                        <div class='stat-value'>$repoCount</div>
                         <div class='stat-label'>Repositories</div>
-                    </div>" })
-                    $(if ($PipelineResults) { "
+                    </div>
                     <div class='stat-item'>
-                        <div class='stat-value'>$($PipelineResults.Count)</div>
+                        <div class='stat-value'>$(if ($PipelineResults) { @($PipelineResults).Count } else { "0" })</div>
                         <div class='stat-label'>Pipelines</div>
-                    </div>" })
-                    $(if ($BuildResults) { "
+                    </div>
                     <div class='stat-item'>
-                        <div class='stat-value'>$($BuildResults.Count)</div>
+                        <div class='stat-value'>$(if ($BuildResults) { @($BuildResults).Count } else { "0" })</div>
                         <div class='stat-label'>Build Definitions</div>
-                    </div>" })
-                    $(if ($ReleaseResults) { "
+                    </div>
                     <div class='stat-item'>
-                        <div class='stat-value'>$($ReleaseResults.Count)</div>
+                        <div class='stat-value'>$(if ($ReleaseResults) { @($ReleaseResults).Count } else { "0" })</div>
                         <div class='stat-label'>Release Definitions</div>
-                    </div>" })
+                    </div>
                 </div>
                 
                 <div class="quick-links">
                     <h4>Quick Links</h4>
-                    $(if ($RepoResults) { "<a href='#repositories' class='quick-link-button'>Repository Findings</a>" })
-                    $(if ($PipelineResults) { "<a href='#pipelines' class='quick-link-button'>Pipeline Analysis</a>" })
+                    <a href='#repositories' class='quick-link-button'>Repository Information</a>
+                    <a href='#pipelines' class='quick-link-button'>Pipeline Analysis</a>
                     $(if ($BuildResults) { "<a href='#builds' class='quick-link-button'>Build Analysis</a>" })
                     $(if ($ReleaseResults) { "<a href='#releases' class='quick-link-button'>Release Analysis</a>" })
                 </div>
@@ -323,7 +333,7 @@ function New-DashboardSummaryHtml {
                         <div class="stat-label">Affected Repositories</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">$($RepoResults.Count)</div>
+                        <div class="stat-value">$(@($RepoResults).Count)</div>
                         <div class="stat-label">Total Repositories</div>
                     </div>
                 </div>
@@ -368,7 +378,7 @@ function New-DashboardSummaryHtml {
                         <div class="stat-label">Affected Pipelines</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">$($PipelineResults.Count)</div>
+                        <div class="stat-value">$(@($PipelineResults).Count)</div>
                         <div class="stat-label">Total Pipelines</div>
                     </div>
                 </div>
