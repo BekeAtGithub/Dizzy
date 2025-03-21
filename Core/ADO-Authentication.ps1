@@ -145,35 +145,35 @@ function Get-AzureDevOpsApiEndpoints {
         Project = $project
         # Git repositories endpoints
         Git = @{
-            Repositories = "$baseUrl/_apis/git/repositories?api-version=6.0"
-            Repository = "$baseUrl/_apis/git/repositories/{repositoryId}?api-version=6.0"
-            Items = "$baseUrl/_apis/git/repositories/{repositoryId}/items?recursionLevel=Full&api-version=6.0"
-            Commits = "$baseUrl/_apis/git/repositories/{repositoryId}/commits?api-version=6.0"
-            PullRequests = "$baseUrl/_apis/git/repositories/{repositoryId}/pullrequests?api-version=6.0"
+            Repositories = "$organization/_apis/git/repositories?api-version=6.0"
+            Repository = "$organization/_apis/git/repositories/{repositoryId}?api-version=6.0"
+            Items = "$organization/_apis/git/repositories/{repositoryId}/items?recursionLevel=Full&api-version=6.0"
+            Commits = "$organization/_apis/git/repositories/{repositoryId}/commits?api-version=6.0"
+            PullRequests = "$organization/_apis/git/repositories/{repositoryId}/pullrequests?api-version=6.0"
         }
         # Build endpoints
         Build = @{
-            Definitions = "$baseUrl/_apis/build/definitions?api-version=6.0"
-            Definition = "$baseUrl/_apis/build/definitions/{definitionId}?api-version=6.0"
-            Builds = "$baseUrl/_apis/build/builds?api-version=6.0"
-            Build = "$baseUrl/_apis/build/builds/{buildId}?api-version=6.0"
-            Artifacts = "$baseUrl/_apis/build/builds/{buildId}/artifacts?api-version=6.0"
-            Timeline = "$baseUrl/_apis/build/builds/{buildId}/timeline?api-version=6.0"
-            Logs = "$baseUrl/_apis/build/builds/{buildId}/logs?api-version=6.0"
+            Definitions = "$organization/_apis/build/definitions?api-version=6.0"
+            Definition = "$organization/_apis/build/definitions/{definitionId}?api-version=6.0"
+            Builds = "$organization/_apis/build/builds?api-version=6.0"
+            Build = "$organization/_apis/build/builds/{buildId}?api-version=6.0"
+            Artifacts = "$organization/_apis/build/builds/{buildId}/artifacts?api-version=6.0"
+            Timeline = "$organization/_apis/build/builds/{buildId}/timeline?api-version=6.0"
+            Logs = "$organization/_apis/build/builds/{buildId}/logs?api-version=6.0"
         }
         # Release endpoints
         Release = @{
-            Definitions = "$baseUrl/_apis/release/definitions?api-version=6.0"
-            Definition = "$baseUrl/_apis/release/definitions/{definitionId}?api-version=6.0"
-            Releases = "$baseUrl/_apis/release/releases?api-version=6.0"
-            Release = "$baseUrl/_apis/release/releases/{releaseId}?api-version=6.0"
+            Definitions = "$organization/_apis/release/definitions?api-version=6.0"
+            Definition = "$organization/_apis/release/definitions/{definitionId}?api-version=6.0"
+            Releases = "$organization/_apis/release/releases?api-version=6.0"
+            Release = "$organization/_apis/release/releases/{releaseId}?api-version=6.0"
         }
         # Pipeline endpoints
         Pipeline = @{
-            Pipelines = "$baseUrl/_apis/pipelines?api-version=6.0"
-            Pipeline = "$baseUrl/_apis/pipelines/{pipelineId}?api-version=6.0"
-            Runs = "$baseUrl/_apis/pipelines/{pipelineId}/runs?api-version=6.0"
-            Run = "$baseUrl/_apis/pipelines/{pipelineId}/runs/{runId}?api-version=6.0"
+            Pipelines = "$organization/_apis/pipelines?api-version=6.0"
+            Pipeline = "$organization/_apis/pipelines/{pipelineId}?api-version=6.0"
+            Runs = "$organization/_apis/pipelines/{pipelineId}/runs?api-version=6.0"
+            Run = "$organization/_apis/pipelines/{pipelineId}/runs/{runId}?api-version=6.0"
         }
         # Security
         Security = @{
@@ -182,10 +182,10 @@ function Get-AzureDevOpsApiEndpoints {
         }
         # Project - Renamed to avoid conflict with the variable
         ProjectApi = @{
-            Info = "$baseUrl/_apis/projects?api-version=6.0"
-            Teams = "$baseUrl/_apis/teams?api-version=6.0"
-            Properties = "$baseUrl/_apis/projects/{projectId}/properties?api-version=6.0"
-            Services = "$baseUrl/_apis/servicehooks/services?api-version=6.0"
+            Info = "$organization/_apis/projects?api-version=6.0"
+            Teams = "$organization/_apis/teams?api-version=6.0"
+            Properties = "$organization/_apis/projects/{projectId}/properties?api-version=6.0"
+            Services = "$organization/_apis/servicehooks/services?api-version=6.0"
         }
     }
 }
