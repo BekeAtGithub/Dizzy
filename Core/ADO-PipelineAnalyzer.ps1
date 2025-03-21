@@ -292,7 +292,81 @@ function Analyze-Pipeline {
     return $pipelineAnalysis
 }
 
-# Main function to analyze all pipelines or a specific one
+# Add this to ADO-PipelineAnalyzer.ps1 to ensure pipelines are collected even if no scan is performed
+
+# Modified function to get pipelines without analyzing
+function Get-PipelinesOnly {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$PipelineId = ""
+    )
+    
+    Write-Host "Retrieving pipeline list..." -ForegroundColor Cyan
+    
+    # Get config
+    $config = Get-DizzyConfig
+    if ($null -eq $config) {
+        Write-Error "Configuration not found. Please run setup first."
+        return @()
+    }
+    
+    # Get auth headers
+    $headers = Get-AzureDevOpsAuthHeader
+    if ($null -eq $headers) {
+        Write-Error "Failed to get authentication headers. Check your PAT."
+        return @()
+    }
+    
+    # Get pipelines directly using the URL format we know works from diagnostics
+    $pipelinesUrl = "$($config.OrganizationUrl)/$($config.Project)/_apis/pipelines?api-version=6.0"
+    
+    try {
+        Write-Host "Calling pipeline API: $pipelinesUrl" -ForegroundColor Cyan
+        $response = Invoke-RestMethod -Uri $pipelinesUrl -Headers $headers -Method Get -ErrorAction Stop
+        
+        Write-Host "API returned $($response.count) pipelines" -ForegroundColor Green
+        
+        # Filter by ID if specified
+        $pipelines = $response.value
+        if (-not [string]::IsNullOrWhiteSpace($PipelineId)) {
+            $pipelines = $pipelines | Where-Object { $_.id -eq $PipelineId }
+            Write-Host "Filtered to $($pipelines.Count) pipelines with ID: $PipelineId" -ForegroundColor Cyan
+        }
+        
+        # Create result objects
+        $pipelineResults = @()
+        foreach ($pipeline in $pipelines) {
+            Write-Host "Processing pipeline: $($pipeline.name) (ID: $($pipeline.id))" -ForegroundColor Cyan
+            
+            $pipelineInfo = [PSCustomObject]@{
+                PipelineId = $pipeline.id
+                PipelineName = $pipeline.name
+                PipelineType = if ($pipeline.folder) { "Folder: $($pipeline.folder)" } else { "Root" }
+                CreatedDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                Url = if ($pipeline._links.web.href) { $pipeline._links.web.href } else { "Unknown" }
+                ScanDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                Findings = @()
+                Runs = @()
+            }
+            
+            $pipelineResults += $pipelineInfo
+        }
+        
+        Write-Host "Returning $($pipelineResults.Count) pipeline objects" -ForegroundColor Green
+        
+        # Ensure we're returning an array
+        return @($pipelineResults)
+    }
+    catch {
+        Write-Error "Error retrieving pipelines: $_"
+        return @()
+    }
+}
+
+# Now modify the Start-PipelineAnalysis function to ensure it returns pipeline information even if scanning is skipped
+# Locate the function Start-PipelineAnalysis and modify it to include this at the beginning:
+
 function Start-PipelineAnalysis {
     [CmdletBinding()]
     param(
@@ -303,7 +377,10 @@ function Start-PipelineAnalysis {
         [switch]$IncludeRuns,
         
         [Parameter(Mandatory = $false)]
-        [int]$MaxRuns = 5
+        [int]$MaxRuns = 5,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$SkipAnalysis
     )
     
     Write-Host "Starting pipeline analysis..." -ForegroundColor Cyan
@@ -314,6 +391,13 @@ function Start-PipelineAnalysis {
         return
     }
     
+    # If we're just getting pipeline info without analysis
+    if ($SkipAnalysis) {
+        return Get-PipelinesOnly -PipelineId $PipelineId
+    }
+    
+    # Rest of the original function continues here...
+    
     # Get all pipelines or a specific one
     $pipelines = Get-AzureDevOpsPipelines -PipelineId $PipelineId
     
@@ -322,6 +406,11 @@ function Start-PipelineAnalysis {
         return
     }
     
+    Write-Host "DEBUG: Retrieved raw pipelines count: $($pipelines.Count)" -ForegroundColor Magenta
+    foreach ($pipeline in $pipelines) {
+        Write-Host "DEBUG: Found pipeline: $($pipeline.name)" -ForegroundColor Magenta
+    }
+
     # Clear previous results
     $script:pipelineAnalysisResults = @()
     
