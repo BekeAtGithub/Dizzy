@@ -84,6 +84,7 @@ function Get-AzureDevOpsAuthHeader {
 # Function to test connection to Azure DevOps
 # In ADO-Authentication.ps1, modify the Test-AzureDevOpsConnection function:
 
+# Add to ADO-Authentication.ps1 in the Test-AzureDevOpsConnection function:
 function Test-AzureDevOpsConnection {
     [CmdletBinding()]
     param()
@@ -103,6 +104,12 @@ function Test-AzureDevOpsConnection {
         Write-Host "Testing connection to: $projectApiUrl" -ForegroundColor Cyan
         
         $response = Invoke-RestMethod -Uri $projectApiUrl -Headers $headers -Method Get -ErrorAction Stop
+        
+        # Add this for debugging
+        Write-Host "Connection successful. Project count: $($response.count)" -ForegroundColor Green
+        foreach ($proj in $response.value) {
+            Write-Host "Project found: $($proj.name)" -ForegroundColor Green
+        }
         
         Write-Verbose "Successfully connected to Azure DevOps project: $($config.Project)"
         return $true
@@ -170,10 +177,10 @@ function Get-AzureDevOpsApiEndpoints {
         }
         # Pipeline endpoints
         Pipeline = @{
-            Pipelines = "$organization/_apis/pipelines?api-version=6.0"
-            Pipeline = "$organization/_apis/pipelines/{pipelineId}?api-version=6.0"
-            Runs = "$organization/_apis/pipelines/{pipelineId}/runs?api-version=6.0"
-            Run = "$organization/_apis/pipelines/{pipelineId}/runs/{runId}?api-version=6.0"
+            Pipelines = "$organization/$project/_apis/pipelines?api-version=6.0"
+            Pipeline = "$organization/$project/_apis/pipelines/{pipelineId}?api-version=6.0"
+            Runs = "$organization/$project/_apis/pipelines/{pipelineId}/runs?api-version=6.0"
+            Run = "$organization/$project/_apis/pipelines/{pipelineId}/runs/{runId}?api-version=6.0"
         }
         # Security
         Security = @{
@@ -314,3 +321,66 @@ function Get-AzureDevOpsApiPaginated {
 #Export-ModuleMember -Function Get-DizzyConfig, Get-DizzyPAT, Get-AzureDevOpsAuthHeader, 
 #                             Test-AzureDevOpsConnection, Get-AzureDevOpsApiEndpoints,
 #                             Invoke-AzureDevOpsApi, Get-AzureDevOpsApiPaginated
+
+# Add this function to ADO-Authentication.ps1:
+function Test-RepositoryAccess {
+    [CmdletBinding()]
+    param()
+    
+    $endpoints = Get-AzureDevOpsApiEndpoints
+    $headers = Get-AzureDevOpsAuthHeader
+    
+    if ($null -eq $endpoints -or $null -eq $headers) {
+        Write-Error "Failed to get API endpoints or authentication headers."
+        return $false
+    }
+    
+    try {
+        $reposUrl = $endpoints.Git.Repositories
+        Write-Host "Testing repository access at: $reposUrl" -ForegroundColor Cyan
+        
+        $response = Invoke-RestMethod -Uri $reposUrl -Headers $headers -Method Get -ErrorAction Stop
+        
+        Write-Host "Repository access successful. Repository count: $($response.count)" -ForegroundColor Green
+        foreach ($repo in $response.value) {
+            Write-Host "Repository found: $($repo.name) (ID: $($repo.id))" -ForegroundColor Green
+        }
+        
+        return $true
+    }
+    catch {
+        Write-Error "Failed to access repositories: $_"
+        return $false
+    }
+}
+
+function Test-PipelineAccess {
+    [CmdletBinding()]
+    param()
+    
+    $endpoints = Get-AzureDevOpsApiEndpoints
+    $headers = Get-AzureDevOpsAuthHeader
+    
+    if ($null -eq $endpoints -or $null -eq $headers) {
+        Write-Error "Failed to get API endpoints or authentication headers."
+        return $false
+    }
+    
+    try {
+        $pipelinesUrl = $endpoints.Pipeline.Pipelines
+        Write-Host "Testing pipeline access at: $pipelinesUrl" -ForegroundColor Cyan
+        
+        $response = Invoke-RestMethod -Uri $pipelinesUrl -Headers $headers -Method Get -ErrorAction Stop
+        
+        Write-Host "Pipeline access successful. Pipeline count: $($response.count)" -ForegroundColor Green
+        foreach ($pipeline in $response.value) {
+            Write-Host "Pipeline found: $($pipeline.name) (ID: $($pipeline.id))" -ForegroundColor Green
+        }
+        
+        return $true
+    }
+    catch {
+        Write-Error "Failed to access pipelines: $_"
+        return $false
+    }
+}
