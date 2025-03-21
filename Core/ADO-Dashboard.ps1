@@ -75,7 +75,10 @@ function Start-AllAnalysis {
         [switch]$IncludeBuildScan = $true,
         
         [Parameter(Mandatory = $false)]
-        [switch]$IncludeReleaseScan = $true
+        [switch]$IncludeReleaseScan = $true,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$EnsureBaselineData = $false
     )
     
     Write-Host "Starting comprehensive Azure DevOps analysis..." -ForegroundColor Cyan
@@ -104,40 +107,96 @@ function Start-AllAnalysis {
             ScanDepth = $ScanDepth
             HistoryDays = $DaysToLookBack
         }
-        RepositoryResults = $null
-        PipelineResults = $null
+        RepositoryResults = @()
+        PipelineResults = @()
         BuildResults = $null
         ReleaseResults = $null
     }
     
     # Run Repository Scanner if available and enabled
-    if ((Get-Command -Name Start-RepositoryScan -ErrorAction SilentlyContinue) -and $IncludeRepoScan) {
-        Write-Host "Starting repository scan..." -ForegroundColor Yellow
-        try {
-            $repoResults = Start-RepositoryScan -RepositoryName $RepositoryName -ScanDepth $ScanDepth -MaxFilesPerRepo $MaxFilesPerRepo
-            if ($repoResults) {
-                $results.RepositoryResults = $repoResults
-                Write-Host "Repository scan completed successfully." -ForegroundColor Green
+    if ((Get-Command -Name Start-RepositoryScan -ErrorAction SilentlyContinue)) {
+        if ($IncludeRepoScan) {
+            Write-Host "Starting repository scan..." -ForegroundColor Yellow
+            try {
+                $repoResults = Start-RepositoryScan -RepositoryName $RepositoryName -ScanDepth $ScanDepth -MaxFilesPerRepo $MaxFilesPerRepo
+                Write-Host "Repository scan returned $($repoResults.Count) repositories" -ForegroundColor Green
+                
+                # Important: Explicitly assign the results to ensure they're correctly passed
+                $results.RepositoryResults = @($repoResults)
+                Write-Host "Assigned $($results.RepositoryResults.Count) repositories to results object" -ForegroundColor Green
+            }
+            catch {
+                Write-Error "Error during repository scan: $_"
+                # Initialize with empty array to avoid null
+                $results.RepositoryResults = @()
             }
         }
-        catch {
-            Write-Error "Error during repository scan: $_"
+        # Always get repository list even if scan is skipped when baseline data is requested
+        elseif ($EnsureBaselineData) {
+            Write-Host "Getting repository list without scanning..." -ForegroundColor Yellow
+            try {
+                $repoResults = Start-RepositoryScan -RepositoryName $RepositoryName -SkipScan
+                Write-Host "Repository list retrieval returned $($repoResults.Count) repositories" -ForegroundColor Green
+                
+                # Important: Explicitly assign the results to ensure they're correctly passed
+                $results.RepositoryResults = @($repoResults)
+                Write-Host "Assigned $($results.RepositoryResults.Count) repositories to results object" -ForegroundColor Green
+            }
+            catch {
+                Write-Error "Error retrieving repository list: $_"
+                # Initialize with empty array to avoid null
+                $results.RepositoryResults = @()
+            }
         }
+        else {
+            # Initialize with empty array to avoid null
+            $results.RepositoryResults = @()
+        }
+    }
+    else {
+        Write-Warning "Repository scanner module not found. Skipping repository scan."
+        # Initialize with empty array to avoid null
+        $results.RepositoryResults = @()
     }
     
     # Run Pipeline Analyzer if available and enabled
-    if ((Get-Command -Name Start-PipelineAnalysis -ErrorAction SilentlyContinue) -and $IncludePipelineScan) {
-        Write-Host "Starting pipeline analysis..." -ForegroundColor Yellow
-        try {
-            $pipelineResults = Start-PipelineAnalysis -PipelineId $PipelineId -IncludeRuns
-            if ($pipelineResults) {
-                $results.PipelineResults = $pipelineResults
-                Write-Host "Pipeline analysis completed successfully." -ForegroundColor Green
+    if ((Get-Command -Name Start-PipelineAnalysis -ErrorAction SilentlyContinue)) {
+        if ($IncludePipelineScan) {
+            Write-Host "Starting pipeline analysis..." -ForegroundColor Yellow
+            try {
+                $pipelineResults = Start-PipelineAnalysis -PipelineId $PipelineId -IncludeRuns
+                if ($pipelineResults) {
+                    $results.PipelineResults = $pipelineResults
+                    Write-Host "Pipeline analysis completed successfully." -ForegroundColor Green
+                }
+            }
+            catch {
+                Write-Error "Error during pipeline analysis: $_"
+                $results.PipelineResults = @()
             }
         }
-        catch {
-            Write-Error "Error during pipeline analysis: $_"
+        # Always get pipeline list even if scan is skipped when baseline data is requested
+        elseif ($EnsureBaselineData) {
+            Write-Host "Getting pipeline list without analyzing..." -ForegroundColor Yellow
+            try {
+                $pipelineResults = Start-PipelineAnalysis -PipelineId $PipelineId -SkipAnalysis
+                if ($pipelineResults) {
+                    $results.PipelineResults = $pipelineResults
+                    Write-Host "Pipeline list retrieved successfully." -ForegroundColor Green
+                }
+            }
+            catch {
+                Write-Error "Error retrieving pipeline list: $_"
+                $results.PipelineResults = @()
+            }
         }
+        else {
+            $results.PipelineResults = @()
+        }
+    }
+    else {
+        Write-Warning "Pipeline analyzer module not found. Skipping pipeline analysis."
+        $results.PipelineResults = @()
     }
     
     # Run Build Analyzer if available and enabled
@@ -176,6 +235,13 @@ function Start-AllAnalysis {
     $results.ScanInfo.ScanDuration = [math]::Round($scanDuration, 2)
     
     Write-Host "All analysis completed in $($results.ScanInfo.ScanDuration) minutes." -ForegroundColor Green
+    
+    # Debug the results object
+    Write-Host "Analysis results summary:" -ForegroundColor Cyan
+    Write-Host "  - Repository Results: $(if ($results.RepositoryResults) { $results.RepositoryResults.Count } else { '0 (null)' })" -ForegroundColor White
+    Write-Host "  - Pipeline Results: $(if ($results.PipelineResults) { $results.PipelineResults.Count } else { '0 (null)' })" -ForegroundColor White
+    Write-Host "  - Build Results: $(if ($results.BuildResults) { ($results.BuildResults | Measure-Object).Count } else { '0 (null)' })" -ForegroundColor White
+    Write-Host "  - Release Results: $(if ($results.ReleaseResults) { ($results.ReleaseResults | Measure-Object).Count } else { '0 (null)' })" -ForegroundColor White
     
     return $results
 }
@@ -327,12 +393,89 @@ function Start-DizzyAnalysis {
                                        -IncludeRepoScan:(-not $SkipRepoScan) `
                                        -IncludePipelineScan:(-not $SkipPipelineScan) `
                                        -IncludeBuildScan:(-not $SkipBuildScan) `
-                                       -IncludeReleaseScan:(-not $SkipReleaseScan)
-    
+                                       -IncludeReleaseScan:(-not $SkipReleaseScan) `
+                                       -EnsureBaselineData:$true
+                                
+    $analysisResults = Add-DirectRepositoryData -ResultsObject $analysisResults
+
     if ($null -eq $analysisResults) {
         Write-Error "Analysis failed to complete."
         return
     }
+
+    # Add debugging code to the Add-DirectRepositoryData function
+# Add this function to your ADO-Dashboard.ps1 file
+function Add-DirectRepositoryData {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$ResultsObject
+    )
+    
+    Write-Host "Directly adding repository data from test script approach..." -ForegroundColor Cyan
+    
+    # Get configuration
+    $config = Get-DizzyConfig
+    if ($null -eq $config) {
+        Write-Error "Configuration not found."
+        return $ResultsObject
+    }
+    
+    # Get authentication headers - same approach as the test script
+    $headers = Get-AzureDevOpsAuthHeader
+    if ($null -eq $headers) {
+        Write-Error "Failed to get authentication headers."
+        return $ResultsObject
+    }
+    
+    # DIRECT REPOSITORY API CALL - exactly like the test script
+    $repoUrl = "$($config.OrganizationUrl)/$($config.Project)/_apis/git/repositories?api-version=6.0"
+    Write-Host "Repository API URL: $repoUrl" -ForegroundColor White
+    
+    try {
+        # Call the API directly
+        $repoResponse = Invoke-RestMethod -Uri $repoUrl -Headers $headers -Method Get -ErrorAction Stop
+        Write-Host "SUCCESS! Retrieved $($repoResponse.count) repositories" -ForegroundColor Green
+        
+        # Debug the response
+        foreach ($repo in $repoResponse.value) {
+            Write-Host "  - $($repo.name) (ID: $($repo.id))" -ForegroundColor White
+        }
+        
+        # Create repository objects exactly as in the test script
+        $repositories = @()
+        foreach ($repo in $repoResponse.value) {
+            # Create object with same properties expected by the dashboard
+            $repoInfo = [PSCustomObject]@{
+                RepositoryName = $repo.name
+                RepositoryId = $repo.id
+                DefaultBranch = $repo.defaultBranch
+                Url = $repo.webUrl
+                ScanDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                ScannedFilesCount = 0
+                TotalFilesCount = 0
+                Findings = @()
+            }
+            
+            $repositories += $repoInfo
+        }
+        
+        Write-Host "Created $($repositories.Count) repository objects" -ForegroundColor Green
+        
+        # Hard-force the repository results
+        $ResultsObject.RepositoryResults = $repositories
+        
+        # Confirm successful assignment
+        Write-Host "Assigned $($ResultsObject.RepositoryResults.Count) repositories to results" -ForegroundColor Green
+    }
+    catch {
+        Write-Error "Repository API call failed: $_"
+    }
+    
+    return $ResultsObject
+}
+    
+
     
     # Generate dashboard
     $dashboardPath = New-AnalysisDashboard -AnalysisResults $analysisResults -OutputFolder $OutputFolder
