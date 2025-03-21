@@ -309,7 +309,141 @@ function Scan-Repository {
     return $repositoryFindings
 }
 
-# Main function to scan all repositories or a specific one
+# Add this to ADO-RepositoryScanner.ps1 to ensure repositories are collected even if no scan is performed
+
+# Modified function to get repositories without scanning
+# Add this function to ADO-RepositoryScanner.ps1
+# Make sure it fully replaces any existing Get-RepositoriesOnly function
+
+function Get-RepositoriesOnly {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$RepositoryName = ""
+    )
+    
+    Write-Host "Retrieving repository list..." -ForegroundColor Cyan
+    
+    # Get config
+    $config = Get-DizzyConfig
+    if ($null -eq $config) {
+        Write-Error "Configuration not found. Please run setup first."
+        return @()
+    }
+    
+    # Get auth headers
+    $headers = Get-AzureDevOpsAuthHeader
+    if ($null -eq $headers) {
+        Write-Error "Failed to get authentication headers. Check your PAT."
+        return @()
+    }
+    
+    # Get repositories directly using the URL format we know works
+    $reposUrl = "$($config.OrganizationUrl)/$($config.Project)/_apis/git/repositories?api-version=6.0"
+    
+    try {
+        Write-Host "Calling API: $reposUrl" -ForegroundColor Cyan
+        $response = Invoke-RestMethod -Uri $reposUrl -Headers $headers -Method Get -ErrorAction Stop
+        
+        Write-Host "API returned $($response.count) repositories" -ForegroundColor Green
+        
+        # Filter by name if specified
+        $repositories = $response.value
+        if (-not [string]::IsNullOrWhiteSpace($RepositoryName)) {
+            $repositories = $repositories | Where-Object { $_.name -eq $RepositoryName }
+            Write-Host "Filtered to $($repositories.Count) repositories with name: $RepositoryName" -ForegroundColor Cyan
+        }
+        
+        # Create result objects
+        $repoResults = @()
+        foreach ($repo in $repositories) {
+            Write-Host "Processing repository: $($repo.name)" -ForegroundColor Cyan
+            
+            $repoInfo = [PSCustomObject]@{
+                RepositoryName = $repo.name
+                RepositoryId = $repo.id
+                DefaultBranch = $repo.defaultBranch
+                Url = $repo.webUrl
+                ScanDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                ScannedFilesCount = 0
+                TotalFilesCount = 0
+                Findings = @()
+            }
+            
+            $repoResults += $repoInfo
+        }
+        
+        Write-Host "Returning $($repoResults.Count) repository objects" -ForegroundColor Green
+        
+        # Ensure we're returning an array
+        return @($repoResults)
+    }
+    catch {
+        Write-Error "Error retrieving repositories: $_"
+        return @()
+    }
+}
+
+# Now modify the Start-RepositoryScan function to use the new Get-RepositoriesOnly
+# Make sure it correctly handles the SkipScan parameter
+
+function Start-RepositoryScan {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$RepositoryName = "",
+        
+        [Parameter(Mandatory = $false)]
+        [ValidateSet("Light", "Medium", "Deep")]
+        [string]$ScanDepth = "Medium",
+        
+        [Parameter(Mandatory = $false)]
+        [int]$MaxFilesPerRepo = 1000,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$SkipScan
+    )
+    
+    Write-Host "Starting repository scanner..." -ForegroundColor Cyan
+    
+    # Test connection first
+    if (-not (Test-AzureDevOpsConnection)) {
+        Write-Error "Failed to connect to Azure DevOps. Please check your configuration."
+        return @()
+    }
+    
+    # Get repository list without scanning if requested
+    if ($SkipScan) {
+        Write-Host "Skipping scan, just retrieving repository information" -ForegroundColor Yellow
+        $repos = Get-RepositoriesOnly -RepositoryName $RepositoryName
+        Write-Host "Retrieved $($repos.Count) repositories without scanning" -ForegroundColor Green
+        return $repos
+    }
+    
+    # The rest of your original Start-RepositoryScan function...
+    # [Keep your existing scanning code here]
+    
+    # Clear previous results
+    $script:repositoryScanResults = @()
+    
+    # Get all repositories or a specific one
+    $repositories = Get-AzureDevOpsRepositories -RepositoryName $RepositoryName
+    
+    if ($null -eq $repositories -or $repositories.Count -eq 0) {
+        Write-Error "No repositories found to scan."
+        return @()
+    }
+    
+    # [The rest of your repository scanning code]
+    
+    # Return results
+    Write-Host "Returning $($script:repositoryScanResults.Count) repository scan results" -ForegroundColor Green
+    return @($script:repositoryScanResults)
+}
+
+# Now modify the Start-RepositoryScan function to ensure it returns repository information even if scanning is skipped
+# Locate the function Start-RepositoryScan and modify it to include this at the beginning:
+
 function Start-RepositoryScan {
     [CmdletBinding()]
     param(
@@ -321,40 +455,30 @@ function Start-RepositoryScan {
         [string]$ScanDepth = "Medium",
         
         [Parameter(Mandatory = $false)]
-        [int]$MaxFilesPerRepo = 1000
+        [int]$MaxFilesPerRepo = 1000,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$SkipScan
     )
     
-    Write-Host "Starting repository scan with $ScanDepth depth..." -ForegroundColor Cyan
+    Write-Host "Starting repository process..." -ForegroundColor Cyan
     
     # Test connection first
     if (-not (Test-AzureDevOpsConnection)) {
         Write-Error "Failed to connect to Azure DevOps. Please check your configuration."
-        return
+        return @()
     }
     
-    # Get all repositories or a specific one
-    $repositories = Get-AzureDevOpsRepositories -RepositoryName $RepositoryName
-    
-    if ($null -eq $repositories -or $repositories.Count -eq 0) {
-        Write-Error "No repositories found to scan."
-        return
+    # If we're just getting repo info without scanning
+    if ($SkipScan) {
+        Write-Host "Skipping scan, just retrieving repository information" -ForegroundColor Yellow
+        return Get-RepositoriesOnly -RepositoryName $RepositoryName
     }
     
-    # Clear previous results
-    $script:repositoryScanResults = @()
+    # Rest of the original function continues here...
+    # [Rest of your existing code]
     
-    # Scan each repository
-    foreach ($repo in $repositories) {
-        $repoResults = Scan-Repository -Repository $repo -MaxFilesToScan $MaxFilesPerRepo -ScanDepth $ScanDepth
-        
-        if ($null -ne $repoResults) {
-            $script:repositoryScanResults += $repoResults
-        }
-    }
-    
-    Write-Host "Repository scan completed. Scanned $($repositories.Count) repositories." -ForegroundColor Green
-    
-    # Return results
+    # Make sure to return an empty array rather than null if no results
     return $script:repositoryScanResults
 }
 
@@ -365,3 +489,4 @@ function Get-RepositoryScanResults {
 
 # Export functions
 #Export-ModuleMember -Function Start-RepositoryScan, Get-RepositoryScanResults
+
