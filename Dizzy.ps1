@@ -1,5 +1,5 @@
 # Dizzy - Azure DevOps Security & Analysis Tool
-# Main script that serves as the entry point when launched from the GUI
+# Main script that serves as the entry point when launched from the GUI 
 
 param(
     [Parameter(Mandatory = $false)]
