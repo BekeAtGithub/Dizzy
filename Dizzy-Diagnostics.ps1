@@ -1,4 +1,4 @@
-# Dizzy - Diagnostics Tool  
+# Dizzy - Diagnostics Tool   
 # This script tests API connections and data retrieval  
 
 # Get the script's directory
