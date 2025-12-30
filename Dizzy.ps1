@@ -1,4 +1,4 @@
-# Dizzy - Azure DevOps Security & Analysis Tool  
+# Dizzy - Azure DevOps Security & Analysis Tool  .
 # Main script that serves as the entry point when launched from the GUI.
 
 param(
@@ -281,5 +281,6 @@ if ($Host.Name -eq "ConsoleHost") {
     Write-Host "Press any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
+
 
 
