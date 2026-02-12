@@ -1,5 +1,5 @@
 # Dizzy - Azure DevOps Analyzer GUI .
-# Provides a GUI interface for setting up and running Azure DevOps analysis
+# Provides a GUI interface for setting up and running Azure DevOps analysis.
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -409,4 +409,5 @@ catch {
 
 # Show the form
 $form.ShowDialog()
+
 
