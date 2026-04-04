@@ -1,6 +1,6 @@
 # Dizzy - Azure DevOps Analyzer  
   
-hey there! 👋 **Dizzy** will help yall find security issues and performance insights in your Azure DevOps environment 
+Dizzy will help yall find security issues and performance insights in your Azure DevOps environment 
 
 
 ![alt text](https://github.com/BekeAtGithub/Dizzy/blob/main/AppScreenShot1.jpg)
