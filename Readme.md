@@ -1,4 +1,4 @@
-# Dizzy - Azure DevOps Analyzer  
+# Dizzy - Azure DevOps Analyzer.
   
 Dizzy will help yall find security issues and performance insights in your Azure DevOps environment 
 
